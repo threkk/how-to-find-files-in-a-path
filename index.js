@@ -1,6 +1,7 @@
-import { readdirSync, accessSync, constants, readdir } from 'fs'
+import { readdirSync, accessSync, readdir, statSync } from 'fs'
 import { readdir as readdirPromise, access as accessPromise } from 'fs/promises'
 import { isAbsolute, resolve, join } from 'path'
+import { R_OK, F_OK } from 'constants'
 
 export function listFiles(
   root,
@@ -30,6 +31,10 @@ export function listFilesSync(
     followSymlinks = false,
   }
 ) {
+  if (statSync(root).isFile()) {
+    if (ignored.includes(root)) return []
+    return [root]
+  }
   // Generate the list of ignored patterns for a given folder.
   const ignoredItemsInFolder = (path) =>
     ignored.map((el) => {
@@ -51,11 +56,11 @@ export function listFilesSync(
   // our list of approved file extensions to add it.
   function listDir(localRoot) {
     const items = []
-
     const dirs = readdirSync(localRoot, {
       encoding: 'utf-8',
       withFileTypes: true,
     })
+
     const ignored = ignoredItemsInFolder(localRoot)
     while (dirs != null && dirs.length > 0) {
       const peek = dirs.pop()
